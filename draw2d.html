@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Draw 2D</title>
+<style>
+:root{--bg:#eceff1;--fg:#17212b;--card:#fff;--mut:#5d6b78;--ac:#d9541e;--ln:#cfd6dc;--cv:#fbfcfd;--ink:#17212b;--gr:#dfe4e8;color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--bg:#10171e;--fg:#e6edf3;--card:#18222c;--mut:#93a3b1;--ln:#2a3846;--cv:#0c1218;--ink:#e6edf3;--gr:#1b2631;color-scheme:dark}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column;height:100vh;height:100dvh}
+.bar{display:flex;gap:5px;padding:6px;overflow-x:auto;background:var(--card);border-bottom:1px solid var(--ln)}
+button,input,select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--ln);border-radius:8px;padding:6px 10px;min-height:38px}
+button{white-space:nowrap}button.on{background:var(--ac);border-color:var(--ac);color:#fff}
+#wrap{flex:1;min-height:0;position:relative}canvas{width:100%;height:100%;display:block;background:var(--cv);touch-action:none}
+#pp{background:var(--card);border-top:1px solid var(--ln);padding:6px;display:flex;gap:6px;overflow-x:auto;min-height:56px;align-items:end}
+#pp label{display:flex;flex-direction:column;font-size:11px;color:var(--mut)}#pp input{width:84px;min-height:34px}
+#ps{display:none}
+@media print{@page{size:A4 landscape;margin:10mm}body>*:not(#ps){display:none!important}#ps{display:block;color:#000;background:#fff}body{display:block;height:auto;background:#fff}#ps img{width:100%;border:1px solid #888}}
+</style></head><body>
+<div class="bar" id="tools"><button data-t="select" class="on">Select</button><button data-t="pan">Pan</button><button data-t="line">Line</button><button data-t="rect">Rect</button><button data-t="circ">Circle</button><button data-t="dim">Dimension</button><button data-t="text">Text</button></div>
+<div class="bar"><button id="undo">Undo</button><button id="copy">Copy</button><button id="rot">Rotate 90°</button><button id="del">Delete</button><button id="fit">Fit</button><button id="sn" class="on">Snap</button><button id="or">Ortho</button><input id="gr" type="number" value="50" min="1" style="width:76px" aria-label="Grid mm"><input id="tx" placeholder="Text to place" style="width:130px"><button id="pr">Print PDF</button></div>
+<div id="wrap"><canvas id="c"></canvas></div><div id="pp"></div>
+<section id="ps"><h3 id="pt"></h3><img id="pi" alt="Drawing"><p>Dimensions in mm. Not to scale unless stated.</p></section>
+<script>
+const $=id=>document.getElementById(id);
+let sh=[],hist=[],tool="select",sel=-1,V={x:-200,y:-200,s:.25},st=null,cur=null,snapOn=true,ortho=false,H=400,Wd=400;
+try{sh=JSON.parse(localStorage.getItem("esd2")||"[]")}catch(e){}
+const save=()=>{hist.push(JSON.stringify(sh));if(hist.length>80)hist.shift()},store=()=>{try{localStorage.setItem("esd2",JSON.stringify(sh))}catch(e){}};
+//CALC
+function segD(a,b,p){const dx=b[0]-a[0],dy=b[1]-a[1],l=dx*dx+dy*dy;let t=l?((p[0]-a[0])*dx+(p[1]-a[1])*dy)/l:0;t=Math.max(0,Math.min(1,t));return Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dy)}
+const corners=s=>[s.a,[s.b[0],s.a[1]],s.b,[s.a[0],s.b[1]]];
+function dist(s,p){if(s.t==="line"||s.t==="dim")return segD(s.a,s.b,p);if(s.t==="rect"){const c=corners(s);return Math.min(...c.map((q,i)=>segD(q,c[(i+1)%4],p)))}
+ if(s.t==="circ")return Math.abs(Math.hypot(p[0]-s.a[0],p[1]-s.a[1])-s.r);return Math.hypot(p[0]-s.a[0],p[1]-s.a[1])-s.h}
+function pts(s){return s.t==="rect"?corners(s):s.t==="circ"||s.t==="text"?[s.a]:[s.a,s.b]}
+function ext(list){let a=[1e9,1e9],b=[-1e9,-1e9];list.forEach(s=>{let P=pts(s);if(s.t==="circ")P=[[s.a[0]-s.r,s.a[1]-s.r],[s.a[0]+s.r,s.a[1]+s.r]];if(s.t==="dim"){const o=Math.abs(s.off);P=P.concat(P.map(q=>[q[0]+o,q[1]+o]),P.map(q=>[q[0]-o,q[1]-o]))}
+ P.forEach(q=>{a=[Math.min(a[0],q[0]),Math.min(a[1],q[1])];b=[Math.max(b[0],q[0]),Math.max(b[1],q[1])]})});return list.length?[a,b]:[[0,0],[1000,1000]]}
+function mvS(s,dx,dy){s.a=[s.a[0]+dx,s.a[1]+dy];if(s.b)s.b=[s.b[0]+dx,s.b[1]+dy]}
+function rot90(s){if(s.t==="text"){s.rot=((s.rot||0)+90)%360;return}if(!s.b)return;const m=[(s.a[0]+s.b[0])/2,(s.a[1]+s.b[1])/2],r=p=>[m[0]-(p[1]-m[1]),m[1]+(p[0]-m[0])];s.a=r(s.a);s.b=r(s.b)}
+//ENDCALC
+function render(x,v,h,w,col,pv){const T=p=>[(p[0]-v.x)*v.s,h-(p[1]-v.y)*v.s];x.fillStyle=col.bg;x.fillRect(0,0,w,h);
+ const g=+$("gr").value||50;if(col.grid&&g*v.s>9){x.fillStyle=col.gr;for(let X=Math.ceil(v.x/g)*g;X<v.x+w/v.s;X+=g)for(let Y=Math.ceil(v.y/g)*g;Y<v.y+h/v.s;Y+=g){const q=T([X,Y]);x.fillRect(q[0]-1,q[1]-1,2,2)}}
+ const one=(s,c,lw)=>{x.strokeStyle=x.fillStyle=c;x.lineWidth=lw;x.beginPath();
+  if(s.t==="line"){const A=T(s.a),B=T(s.b);x.moveTo(A[0],A[1]);x.lineTo(B[0],B[1]);x.stroke()}
+  else if(s.t==="rect"){corners(s).map(T).forEach((q,i)=>i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]));x.closePath();x.stroke()}
+  else if(s.t==="circ"){const A=T(s.a);x.arc(A[0],A[1],Math.max(1,s.r*v.s),0,7);x.stroke()}
+  else if(s.t==="text"){const A=T(s.a);x.save();x.translate(A[0],A[1]);x.rotate(-(s.rot||0)*Math.PI/180);x.font=Math.max(8,s.h*v.s)+"px system-ui";x.fillText(s.s,0,0);x.restore()}
+  else if(s.t==="dim")dim(x,T,s.a,s.b,s.off,c,col.fs)};
+ sh.forEach((s,i)=>one(s,i===sel?col.sel:col.ink,i===sel?2.5:1.4));if(pv)one(pv,col.sel,1.2)}
+function dim(x,T,a,b,off,col,fs){const dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy);if(L<1e-6)return;const nx=-dy/L,ny=dx/L,A=T(a),B=T(b),A1=T([a[0]+nx*off,a[1]+ny*off]),B1=T([b[0]+nx*off,b[1]+ny*off]);
+ x.lineWidth=1;x.beginPath();const ex=(P,Q)=>{const ux=Q[0]-P[0],uy=Q[1]-P[1],n=Math.hypot(ux,uy)||1;x.moveTo(P[0]+ux/n*3,P[1]+uy/n*3);x.lineTo(Q[0]+ux/n*6,Q[1]+uy/n*6)};
+ ex(A,A1);ex(B,B1);x.moveTo(A1[0],A1[1]);x.lineTo(B1[0],B1[1]);x.stroke();
+ const sx=B1[0]-A1[0],sy=B1[1]-A1[1],n=Math.hypot(sx,sy)||1,ux=sx/n,uy=sy/n;
+ [[A1,1],[B1,-1]].forEach(([p,s])=>{x.beginPath();x.moveTo(p[0],p[1]);x.lineTo(p[0]+s*ux*9-uy*3,p[1]+s*uy*9+ux*3);x.lineTo(p[0]+s*ux*9+uy*3,p[1]+s*uy*9-ux*3);x.fill()});
+ x.save();x.translate((A1[0]+B1[0])/2,(A1[1]+B1[1])/2);let r=Math.atan2(sy,sx);if(r>Math.PI/2||r<-Math.PI/2)r+=Math.PI;x.rotate(r);x.font=fs+"px system-ui";x.textAlign="center";x.fillText(String(Math.round(L*10)/10),0,-3);x.restore()}
+const css=()=>{const s=getComputedStyle(document.documentElement),g=n=>s.getPropertyValue(n).trim();return{bg:g("--cv"),ink:g("--ink"),gr:g("--gr"),sel:"#d9541e",fs:12,grid:1}};
+function paint(){const c=$("c"),d=Math.min(2,devicePixelRatio||1);Wd=c.clientWidth;H=c.clientHeight;c.width=Wd*d;c.height=H*d;const x=c.getContext("2d");x.setTransform(d,0,0,d,0,0);
+ let pv=null;if(st&&st.a&&cur){const a=st.a,b=cur;pv=tool==="circ"?{t:"circ",a,r:Math.hypot(b[0]-a[0],b[1]-a[1])}:{t:tool,a,b,off:200}}render(x,V,H,Wd,css(),pv);store()}
+const toW=(px,py)=>[px/V.s+V.x,(H-py)/V.s+V.y];
+function snap(p){let best=null,bd=14/V.s;sh.forEach(s=>pts(s).forEach(q=>{const d=Math.hypot(q[0]-p[0],q[1]-p[1]);if(d<bd){bd=d;best=q}}));if(best)return best.slice();if(!snapOn)return p;const g=+$("gr").value||50;return[Math.round(p[0]/g)*g,Math.round(p[1]/g)*g]}
+const con=(a,p)=>ortho&&(tool==="line"||tool==="dim")?(Math.abs(p[0]-a[0])>Math.abs(p[1]-a[1])?[p[0],a[1]]:[a[0],p[1]]):p;
+const pick=p=>{let k=-1,bd=14/V.s;sh.forEach((s,i)=>{const d=dist(s,p);if(d<bd){bd=d;k=i}});return k};
+const cv=$("c");
+cv.addEventListener("pointerdown",e=>{cv.setPointerCapture(e.pointerId);const r=cv.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top,raw=toW(px,py),p=snap(raw);
+ if(tool==="pan")st={pan:1,x:px,y:py,vx:V.x,vy:V.y};
+ else if(tool==="select"){sel=pick(raw);if(sel>=0){save();st={mv:1,last:p}}props()}
+ else if(tool==="text"){const t=$("tx").value.trim();if(t){save();sh.push({t:"text",a:p,s:t,h:150,rot:0});sel=sh.length-1;props()}}
+ else st={a:p};paint()});
+cv.addEventListener("pointermove",e=>{if(!st)return;const r=cv.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top;
+ if(st.pan){V.x=st.vx-(px-st.x)/V.s;V.y=st.vy+(py-st.y)/V.s}
+ else if(st.mv){const p=snap(toW(px,py));mvS(sh[sel],p[0]-st.last[0],p[1]-st.last[1]);st.last=p}
+ else if(st.a)cur=con(st.a,snap(toW(px,py)));paint()});
+cv.addEventListener("pointerup",()=>{if(st&&st.a&&cur){const a=st.a,b=cur,d=Math.hypot(b[0]-a[0],b[1]-a[1]);if(d>1){save();sh.push(tool==="circ"?{t:"circ",a,r:d}:tool==="dim"?{t:"dim",a,b,off:200}:{t:tool,a,b});sel=sh.length-1;props()}}st=null;cur=null;paint()});
+cv.addEventListener("wheel",e=>{e.preventDefault();const r=cv.getBoundingClientRect(),w=toW(e.clientX-r.left,e.clientY-r.top),k=e.deltaY<0?1.15:.87;V.s=Math.max(.01,Math.min(20,V.s*k));V.x=w[0]-(e.clientX-r.left)/V.s;V.y=w[1]-(H-(e.clientY-r.top))/V.s;paint()},{passive:false});
+$("tools").addEventListener("click",e=>{const t=e.target.dataset.t;if(!t)return;tool=t;document.querySelectorAll("[data-t]").forEach(b=>b.classList.toggle("on",b.dataset.t===t))});
+$("undo").onclick=()=>{if(hist.length){sh=JSON.parse(hist.pop());sel=-1;props();paint()}};
+$("copy").onclick=()=>{if(sel<0)return;save();const s=JSON.parse(JSON.stringify(sh[sel]));mvS(s,100,100);sh.push(s);sel=sh.length-1;props();paint()};
+$("rot").onclick=()=>{if(sel<0)return;save();rot90(sh[sel]);props();paint()};
+$("del").onclick=()=>{if(sel<0)return;save();sh.splice(sel,1);sel=-1;props();paint()};
+$("fit").onclick=()=>{const [a,b]=ext(sh),m=60,s=Math.min((Wd-2*m)/Math.max(b[0]-a[0],1),(H-2*m)/Math.max(b[1]-a[1],1));V.s=Math.max(.01,Math.min(20,s));V.x=a[0]-m/V.s;V.y=a[1]-m/V.s;paint()};
+$("sn").onclick=()=>{snapOn=!snapOn;$("sn").classList.toggle("on",snapOn)};$("or").onclick=()=>{ortho=!ortho;$("or").classList.toggle("on",ortho)};$("gr").oninput=paint;
+const F=(k,l,v,t)=>'<label>'+l+'<input data-k="'+k+'" type="'+(t||"number")+'" step="any" inputmode="decimal" value="'+v+'"></label>';
+function props(){const s=sh[sel],p=$("pp");if(!s){p.innerHTML='<span style="color:var(--mut)">Tap a shape to edit its numbers.</span>';return}
+ const r=n=>Math.round(n*100)/100;p.innerHTML=(s.t==="circ"?F("ax","Centre X",r(s.a[0]))+F("ay","Centre Y",r(s.a[1]))+F("r","Radius",r(s.r)):s.t==="text"?F("ax","X",r(s.a[0]))+F("ay","Y",r(s.a[1]))+F("s","Text",s.s,"text")+F("h","Size",s.h)+F("rot","Rotation °",s.rot||0):F("ax","X1",r(s.a[0]))+F("ay","Y1",r(s.a[1]))+F("bx","X2",r(s.b[0]))+F("by","Y2",r(s.b[1]))+(s.t==="dim"?F("off","Offset",s.off):""))}
+$("pp").addEventListener("focusin",()=>save());
+$("pp").addEventListener("input",e=>{const k=e.target.dataset.k,s=sh[sel];if(!s||!k)return;const v=e.target.type==="number"?+e.target.value:e.target.value;
+ if(k==="ax")s.a[0]=v;else if(k==="ay")s.a[1]=v;else if(k==="bx")s.b[0]=v;else if(k==="by")s.b[1]=v;else s[k]=v;paint()});
+$("pr").onclick=()=>{const [a,b]=ext(sh),W=1400,Hh=900,m=60,s=Math.min((W-2*m)/Math.max(b[0]-a[0],1),(Hh-2*m)/Math.max(b[1]-a[1],1)),c=document.createElement("canvas");c.width=W;c.height=Hh;
+ const sv=sel;sel=-1;render(c.getContext("2d"),{x:a[0]-m/s,y:a[1]-m/s,s},Hh,W,{bg:"#fff",ink:"#000",sel:"#000",fs:13,grid:0},null);sel=sv;
+ $("pi").src=c.toDataURL("image/png");$("pt").textContent="Drawing · "+new Date().toLocaleDateString();setTimeout(()=>window.print(),80)};
+addEventListener("resize",paint);props();setTimeout(()=>{$("fit").click()},50);
+</script></body></html>

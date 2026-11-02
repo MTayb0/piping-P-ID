@@ -1,0 +1,21 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14485e"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png">
+<title>Engineering Studio</title>
+<style>
+html,body{height:100%;margin:0}body{display:flex;flex-direction:column;background:#10171e;font:14px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+iframe{flex:1;width:100%;border:0;display:none;background:#eceff1}iframe.on{display:block}
+nav{display:flex;background:#14485e;padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{flex:1;padding:12px 2px;border:0;background:none;color:#cfe6f0;font:inherit;font-size:13px;min-height:48px}
+nav button.on{background:#d9541e;color:#fff;font-weight:600}
+</style></head><body>
+<iframe id="draw2d" src="draw2d.html" class="on" title="Draw 2D"></iframe>
+<iframe id="sketch" src="sketch.html" title="Pipe sketch"></iframe>
+<iframe id="tools" src="tools.html" title="Calculators"></iframe>
+<iframe id="handbook" src="handbook.html" title="Field handbook"></iframe>
+<nav><button data-f="draw2d" class="on">Draw 2D</button><button data-f="sketch">Pipe 3D</button><button data-f="tools">Calculators</button><button data-f="handbook">Handbook</button></nav>
+<script>
+document.querySelector("nav").addEventListener("click",e=>{const f=e.target.dataset.f;if(!f)return;
+document.querySelectorAll("iframe,nav button").forEach(x=>x.classList.remove("on"));document.getElementById(f).classList.add("on");e.target.classList.add("on")});
+if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script></body></html>

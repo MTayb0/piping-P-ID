@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Engineering Studio – Pipe Sketch</title>
+<style>
+:root{--bg:#eceff1;--fg:#17212b;--card:#fff;--mut:#5d6b78;--ac:#d9541e;--ln:#cfd6dc;--p1:#4aa3c4;--p2:#14485e;--v:#e0892b;--dim:#d9541e;--cv:#f9fafb;color-scheme:light;box-sizing:border-box}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10171e;--fg:#e6edf3;--card:#18222c;--mut:#93a3b1;--ln:#2a3846;--p1:#6fc0de;--p2:#0b2a38;--v:#f0a04b;--dim:#ff8a57;--cv:#0c1218;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#10171e;--fg:#e6edf3;--card:#18222c;--mut:#93a3b1;--ln:#2a3846;--p1:#6fc0de;--p2:#0b2a38;--v:#f0a04b;--dim:#ff8a57;--cv:#0c1218;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;max-width:760px;margin-inline:auto;padding:12px;padding-top:max(12px,env(safe-area-inset-top));padding-bottom:max(12px,env(safe-area-inset-bottom))}
+h1{font:600 18px/1.2 system-ui,sans-serif;margin:4px 0 10px}h2{font:600 15px/1.2 system-ui,sans-serif;margin:0 0 8px}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:10px;margin-bottom:10px}
+canvas{width:100%;height:48vh;min-height:280px;display:block;background:var(--cv);border-radius:8px;touch-action:none}
+.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}
+button,select,input{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--ln);border-radius:8px;padding:8px 10px;min-height:40px}
+button.on,button.pri{background:var(--ac);border-color:var(--ac);color:#fff}
+.g{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+label{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--mut)}label input,label select{width:100%;color:var(--fg)}
+.it{border:1px solid var(--ln);border-radius:8px;padding:8px;margin-bottom:8px}
+.it b{font-size:13px}.it .f{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:6px;margin-top:6px}
+.tw{overflow-x:auto}table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--ln);white-space:nowrap}th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
+.warn{color:var(--dim);font-size:13px;margin:6px 0 0}.note{color:var(--mut);font-size:12px;margin:8px 0 0}
+#ps{display:none}
+@media print{@page{size:A4 landscape;margin:10mm}body>*:not(#ps){display:none!important}#ps{display:block;color:#000;background:#fff}body{background:#fff;padding:0;max-width:none}
+#ps h2{font-size:16px}.pg{display:grid;grid-template-columns:1fr 1fr;gap:6px}.pg img{width:100%;border:1px solid #999}#ps table{font-size:11px}#ps th,#ps td{border-bottom:1px solid #999;color:#000}}
+#tb{position:absolute;right:6px;top:6px;display:flex;flex-direction:column;gap:6px}#tb button{width:42px;height:42px;padding:0;font-size:19px;opacity:.93}
+#joy{position:absolute;left:10px;bottom:10px;width:110px;height:110px;border-radius:50%;background:rgba(128,128,128,.28);border:2px solid rgba(128,128,128,.5);touch-action:none;display:none}#ball{position:absolute;left:31px;top:31px;width:48px;height:48px;border-radius:50%;background:var(--ac);pointer-events:none}#hb{position:absolute;right:62px;bottom:10px;display:none;flex-direction:column;gap:6px}#hb button{width:42px;height:42px;padding:0;font-size:16px}
+</style></head><body>
+<h1>Engineering Studio · Pipe Sketch</h1>
+<div class="card"><div style="position:relative"><canvas id="cv"></canvas><div id="tb"><button data-m="orbit" class="on" aria-label="Orbit" title="Orbit">⟳</button><button data-m="pan" aria-label="Pan" title="Pan">✥</button><button data-m="zoom" aria-label="Zoom" title="Zoom">±</button><button data-m="hold" aria-label="Scroll page" title="Scroll page">🔒</button><button id="walk" aria-label="Walk around" title="Walk around">🚶</button><button id="home" aria-label="Home view" title="Home">⌂</button><button id="fitb" aria-label="Fit" title="Fit">⛶</button></div><div id="joy"><div id="ball"></div></div><div id="hb"><button id="hu" aria-label="Move up">▲</button><button id="hd" aria-label="Move down">▼</button></div></div>
+<div class="row" id="views"><button data-v="iso" class="on">Iso</button><button data-v="front">Front</button><button data-v="top">Top</button><button data-v="side">Right</button><button data-v="left">Left</button><button data-v="back">Back</button><button data-v="bottom">Bottom</button><button id="zi">＋</button><button id="zo">－</button><button id="dm" class="on">Dimensions</button></div>
+<div class="g" style="margin-top:8px"><label>Dimension distance<input id="off" type="range" min="6" max="60" value="22"></label><label>Dimension text size<input id="ts" type="range" min="9" max="22" value="12"></label></div>
+<p class="note" id="sum"></p></div>
+
+<div class="card"><h2>Job</h2><div class="row" style="margin:0 0 8px"><button id="sv" class="pri">Save project</button><button id="sh">Share</button><button id="op">Open project</button><input id="fi" type="file" accept=".json,application/json" hidden></div><div class="g">
+<label>Job or tag name<input id="job" placeholder="e.g. FCU-3 valve package"></label>
+
+<label>Wall thickness (mm)<input id="wall" type="number" step="0.1" min="1"></label>
+<label>Elbow radius (× OD)<select id="rf"><option value="1.5">1.5 long radius</option><option value="1">1.0 short radius</option><option value="3">3.0 bend</option></select></label>
+
+<label>Load example<select id="pre"><option value="">Choose…</option><option value="fcu">FCU valve package</option><option value="chl">Chiller header with branches</option></select></label>
+</div></div>
+
+<div class="card"><h2>Lines</h2><div class="row" id="tabs"></div><div class="g" id="lf" style="margin-top:8px"></div><div id="clr" class="note"></div><p class="note">Line 2+ can start from any point on an earlier line (e.g. a tee branch end) or sit free at its own X / Y / height Z. Change the height or offset and the gap to other lines updates.</p></div>
+<div class="card"><h2 id="ih">Items</h2><div id="items"></div>
+<div class="row" id="adds"><button data-a="pipe">+ Pipe</button><button data-a="elbow">+ Elbow</button><button data-a="valve">+ Valve</button><button data-a="flange">+ Flange</button><button data-a="reducer">+ Reducer</button><button data-a="tee">+ Tee</button><button data-a="nipple">+ Nipple</button><button data-a="union">+ Union</button><button data-a="hammer">+ Hammer union</button><button data-a="orifice">+ Orifice assy</button><button data-a="coupling">+ Coupling</button><button data-a="cap">+ Cap</button><button data-a="expjoint">+ Exp. joint</button><button data-a="inst">+ Instrument</button></div>
+<p class="warn" id="warn"></p>
+<p class="note">Valve, flange and fitting lengths start with placeholder values. Replace them with the length from the actual valve or fitting data sheet.</p></div>
+
+<div class="card"><h2>Supports &amp; attachments</h2><div class="row" id="exadds"><button data-x="support">+ Support (below)</button><button data-x="hanger">+ Hanger (above)</button><button data-x="beam">+ Cross beam</button><button data-x="block">+ Attached item</button></div><p class="note" id="exn"></p><div id="exs" style="margin-top:8px"></div></div>
+<div class="card"><h2>Cut list</h2><div class="tw"><table><thead><tr><th>#</th><th>Item</th><th>Size</th><th>mm</th></tr></thead><tbody id="rows"></tbody></table></div>
+<div class="row"><button id="print" class="pri">Print sheet (4 views)</button><button id="copy">Copy cut list</button></div>
+<p class="note">Beta. Check all dimensions with a qualified engineer before cutting material.</p></div>
+
+<section id="ps"><h2 id="pt"></h2><div class="pg"><img alt="Isometric"><img alt="Front"><img alt="Top"><img alt="Side"></div><table><thead><tr><th>#</th><th>Item</th><th>Size</th><th>mm</th></tr></thead><tbody id="pr"></tbody></table><p id="pn"></p></section>
+
+<script>
+const $=id=>document.getElementById(id);
+const OD={"1/2":21.3,"3/4":26.7,"1":33.4,"1-1/4":42.2,"1-1/2":48.3,"2":60.3,"2-1/2":73,"3":88.9,"4":114.3,"5":141.3,"6":168.3,"8":219.1,"10":273.1,"12":323.9};
+const DIR={"+X":[1,0,0],"-X":[-1,0,0],"+Y":[0,1,0],"-Y":[0,-1,0],"+Z":[0,0,1],"-Z":[0,0,-1]};
+//CALC
+const sub=(a,b)=>a.map((x,k)=>x-b[k]),dt=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+function sd(p1,q1,p2,q2){const d1=sub(q1,p1),d2=sub(q2,p2),r=sub(p1,p2),a=dt(d1,d1),e=dt(d2,d2),f=dt(d2,r),c=dt(d1,r),b=dt(d1,d2),den=a*e-b*b,cl=(x,l,h)=>Math.max(l,Math.min(h,x));
+ let s=den>1e-9?cl((b*f-c*e)/den,0,1):0,t=(b*s+f)/e;if(t<0){t=0;s=cl(-c/a,0,1)}else if(t>1){t=1;s=cl((b-c)/a,0,1)}
+ const c1=p1.map((x,k)=>x+d1[k]*s),c2=p2.map((x,k)=>x+d2[k]*t);return{d:Math.hypot(c1[0]-c2[0],c1[1]-c2[1],c1[2]-c2[2]),m:c1.map((x,k)=>(x+c2[k])/2)}}
+function build(lines,rf0,OD){
+ const P=[],D=[],rows=[],warn=[],len={},E=[],S0=[],AT=[],CLR=[],LL=[];
+ const mv=(q,v,l)=>q.map((x,k)=>x+v[k]*l),nrm=v=>{const n=Math.hypot(v[0],v[1],v[2]);return v.map(x=>x/n)},add=(z,l)=>{len[z]=(len[z]||0)+l};
+ const ext=(L,x,k)=>{const path=P.filter(s=>s.l===L&&!s.br),N="L"+(L+1)+".S"+(k+1);if(!path.length)return;
+  let at=Math.max(0,+x.at||0),acc=0,sg=path[path.length-1],f=1,hit=false;
+  for(const s of path){const d=Math.hypot(s.b[0]-s.a[0],s.b[1]-s.a[1],s.b[2]-s.a[2]);if(acc+d>=at){sg=s;f=d?(at-acc)/d:0;hit=true;break}acc+=d}
+  if(!hit)warn.push(N+": distance is past the end of the line, placed at the end.");
+  const dir=nrm(sub(sg.b,sg.a)),pt=sg.a.map((v,j)=>v+(sg.b[j]-v)*f),od=sg.od,id=1000+k,vert=Math.hypot(dir[0],dir[1])<.2,pp=vert?[1,0,0]:nrm([dir[1],-dir[0],0]),
+  sp=(a,b,w,lab)=>P.push({br:1,c:x.c||"",l:L,i:id,a,b,k:"steel",od:w,w,lab:lab||""}),at0=Math.round(at);
+  if((x.t==="support"||x.t==="hanger")&&vert){warn.push(N+": supports and hangers need a horizontal pipe at that distance.");return}
+  if(x.t==="support"){const top=pt[2]-od/2,pw=Math.max(5,+x.pw||100),sl=Math.max(10,+x.sl||200),h=+x.h>0?+x.h:(top>60?top-12:300),zs=top-6,zp=top-12;
+   sp([pt[0]-dir[0]*sl/2,pt[1]-dir[1]*sl/2,zs],[pt[0]+dir[0]*sl/2,pt[1]+dir[1]*sl/2,zs],od*1.25);const a=[pt[0],pt[1],zp],b=[pt[0],pt[1],zp-h];sp(a,b,pw);sp(b,[b[0],b[1],b[2]-12],pw*2.4);
+   D.push({a,b,x:h});rows.push([N,"Support below at "+at0+" mm (member "+pw+", shoe "+sl+")","-",Math.round(h)])}
+  else if(x.t==="hanger"){const top=pt[2]+od/2,h=Math.max(10,+x.h||500),rw=Math.max(4,+x.pw||16);
+   sp([pt[0]-dir[0]*12,pt[1]-dir[1]*12,pt[2]],[pt[0]+dir[0]*12,pt[1]+dir[1]*12,pt[2]],od*1.3);const a=[pt[0],pt[1],top],b=[pt[0],pt[1],top+h];sp(a,b,rw);sp(b,[b[0],b[1],b[2]+12],rw*5);
+   D.push({a,b,x:h});rows.push([N,"Hanger above at "+at0+" mm (rod dia "+rw+")","-",Math.round(h)])}
+  else if(x.t==="beam"){const bl=Math.max(50,+x.bl||1000),bw=Math.max(5,+x.pw||100),zc=+x.vo?pt[2]+ +x.vo:pt[2]-od/2-bw/2;
+   sp([pt[0]-pp[0]*bl/2,pt[1]-pp[1]*bl/2,zc],[pt[0]+pp[0]*bl/2,pt[1]+pp[1]*bl/2,zc],bw);rows.push([N,"Cross beam at "+at0+" mm (size "+bw+")","-",Math.round(bl)])}
+  else if(x.t==="block"){const so=+x.so||0,W=Math.max(5,+x.pw||200),H=Math.max(5,+x.h||300),a=[pt[0]+pp[0]*so,pt[1]+pp[1]*so,pt[2]+(+x.vo||0)];sp(a,[a[0],a[1],a[2]+H],W,String(x.lb||"").slice(0,8));
+   D.push({a,b:[a[0],a[1],a[2]+H],x:H});rows.push([N,"Attached item "+(x.lb||"")+" at "+at0+" mm, side "+so,"-",Math.round(H)])}};
+ lines.forEach((ln,L)=>{
+  let p=[+ln.ox||0,+ln.oy||0,+ln.oz||0],h=DIR[ln.start]||DIR["+X"],sz=ln.nps,od=OD[sz]||60,e={},at=null;
+  if(ln.att){const a=ln.att.split(":");if(+a[0]<L&&E[+a[0]]&&E[+a[0]][a[1]]){at=E[+a[0]][a[1]];p=p.map((x,k)=>x+at[k])}}
+  AT[L]=at;S0[L]=p;e[0]=p;
+  ln.items.forEach((it,i)=>{const N="L"+(L+1)+"."+(i+1);
+   if(it.t==="elbow"){const w=DIR[it.d],a=Math.min(179,Math.max(1,+it.a||90))*Math.PI/180;
+    if(Math.abs(dt(h,w))>1e-6){warn.push(N+": elbow must turn perpendicular to the pipe direction.");e[i+1]=p;return}
+    const R=od*(+it.rf||rf0),c=mv(p,w,R),n=Math.max(2,Math.ceil(a/(Math.PI/16)));let q=p;
+    for(let j=1;j<=n;j++){const t=a*j/n,en=c.map((x,k)=>x-w[k]*R*Math.cos(t)+h[k]*R*Math.sin(t));P.push({c:it.c||"",l:L,i,a:q,b:en,k:"pipe",od});q=en}
+    rows.push([N,Math.round(a*1800/Math.PI)/10+"° elbow, centre to end",sz,Math.round(R*Math.tan(a/2))]);
+    h=nrm(h.map((x,k)=>x*Math.cos(a)+w[k]*Math.sin(a)));p=q;e[i+1]=p;return}
+   if(it.t==="orifice"){const ft=Math.max(1,+it.len||25),pt=Math.max(1,+it.pt||8),fd=+it.fd||od*2.2,q1=mv(p,h,ft),q2=mv(q1,h,pt),q3=mv(q2,h,ft);
+    P.push({c:it.c||"",l:L,i,a:p,b:q1,k:"flange",od,w:fd});P.push({c:it.pc||"",l:L,i,a:q1,b:q2,k:"plate",od,w:fd*1.05,lab:"O"});P.push({c:it.c||"",l:L,i,a:q2,b:q3,k:"flange",od,w:fd});
+    rows.push([N,"Orifice assembly: 2 flanges + plate "+(it.r||"")+" "+(it.tag||""),sz,Math.round(2*ft+pt)]);D.push({a:p,b:q3,x:2*ft+pt});p=q3;e[i+1]=p;return}
+   const l=Math.max(1,+it.len||1),q=mv(p,h,l);
+   if(it.t==="reducer"){rows.push([N,"Reducer to "+it.to,sz,l]);P.push({c:it.c||"",l:L,i,a:p,b:q,k:"red",od});sz=it.to;od=OD[sz]||od}
+   else{const T=it.t,G=GEN[T],nm=T==="pipe"?"Pipe (cut)":T==="nipple"?"Nipple "+(it.nt||"")+(it.tag?" "+it.tag:""):T==="valve"?(it.v||"Valve")+" valve"+(it.tag?" "+it.tag:""):T==="flange"?"Flange "+(it.ft||"")+(it.r?" "+it.r:""):G?G.n+(it.tag?" "+it.tag:"")+(it.r?" "+it.r:""):T==="inst"?"Instrument tap":"Tee";
+    P.push({c:it.c||"",l:L,i,a:p,b:q,k:T==="nipple"?"pipe":T==="inst"?"tee":T,od,lab:T==="valve"?(it.v||"V")[0]:T==="nipple"?"N":G?G.l:"",w:(T==="valve"||T==="flange"||G)?(+it.vd||+it.fd||0):0});rows.push([N,nm,sz,l]);if(T==="pipe"||T==="nipple")add(sz,l)}
+   D.push({a:p,b:q,x:l});
+   if(it.t==="tee"||it.t==="inst"){const isI=it.t==="inst",w=DIR[it.d],code=((it.ia||"")+String(it.ifn||"").toUpperCase().slice(0,4))||it.ity||"I";if(Math.abs(dt(h,w))>1e-6)warn.push(N+": tee branch direction must be perpendicular to the run.");else{
+    const pos=(it.pos==null||it.pos==="")?50:Math.min(100,Math.max(0,+it.pos)),m=mv(p,h,l*pos/100),r=(+it.ba||90)*Math.PI/180,bd=nrm(h.map((x,k)=>x*Math.cos(r)+w[k]*Math.sin(r))),
+    b=Math.max(1,+it.b||1),bz=OD[it.bs]?it.bs:sz,bo=OD[bz],en=mv(m,bd,b),bv=Math.min(b-1,Math.max(0,isI?(+it.il||90):(+it.bv||0))),sv=mv(en,bd,-bv);
+    P.push({br:1,c:it.bc||"",l:L,i,a:m,b:sv,k:"pipe",od:bo});if(bv)P.push({br:1,c:it.bc||"",l:L,i,a:sv,b:en,k:isI?"inst":"valve",od:bo,lab:isI?code:"V",w:isI?(+it.idia||70):0,tl:isI?code:"",tn:isI?String(it.loop||""):"",bal:it.bal||"Field"});D.push({a:m,b:en,x:b});e[(i+1)+"b"]=en;
+    rows.push([N+"b","Branch pipe (cut, tee centre to valve)",bz,b-bv]);add(bz,b-bv);if(bv)rows.push([N+"b",isI?"Instrument "+(it.loop?code+"-"+it.loop:(it.tag||code)):"Branch valve",bz,bv])}}
+   e[i+1]=q;p=q});
+  E[L]=e;LL[L]=P.filter(s=>s.l===L&&!s.br).reduce((q,s)=>q+Math.hypot(s.b[0]-s.a[0],s.b[1]-s.a[1],s.b[2]-s.a[2]),0);(ln.ex||[]).forEach((x,k)=>ext(L,x,k))});
+ for(let a=0;a<lines.length;a++)for(let b=a+1;b<lines.length;b++){let best=null;
+  P.forEach(s=>{if(s.l!==a)return;P.forEach(t=>{if(t.l!==b)return;const r=sd(s.a,s.b,t.a,t.b),g=r.d-(s.od+t.od)/2;
+   if([AT[a],AT[b]].some(z=>z&&Math.hypot(r.m[0]-z[0],r.m[1]-z[1],r.m[2]-z[2])<(s.od+t.od)*1.5))return;
+   if(!best||g<best.g)best={g,m:r.m,si:s.i,ti:t.i}})});if(best)CLR.push({a,b,g:best.g,m:best.m,si:best.si,ti:best.ti})}
+ return{P,D,rows,warn,len,E,S0,CLR,LL}}
+//ENDCALC
+const kgm=(od,w)=>Math.PI/4*(od*od-(od-2*w)**2)*7850/1e6;
+const NEW={pipe:{t:"pipe",len:500},elbow:{t:"elbow",d:"+Z",a:90,rf:""},valve:{t:"valve",v:"Ball",len:150,vd:0,tag:""},flange:{t:"flange",len:20,fd:0,r:"",ft:"WN"},reducer:{t:"reducer",len:150,to:"2"},union:{t:"union",len:60,vd:0,r:"",tag:""},hammer:{t:"hammer",len:150,vd:0,r:"1502",tag:""},coupling:{t:"coupling",len:50,vd:0,r:"",tag:""},cap:{t:"cap",len:40,vd:0,r:"",tag:""},expjoint:{t:"expjoint",len:300,vd:0,r:"",tag:""},nipple:{t:"nipple",len:100,nt:"TBE",tag:""},orifice:{t:"orifice",len:25,pt:8,fd:0,r:"300#",tag:"FE-"},inst:{t:"inst",len:40,pos:50,d:"+Z",ba:90,b:150,il:90,idia:70,ia:"P",ifn:"G",loop:"101",bal:"Field",bs:"1/2"},tee:{t:"tee",len:200,pos:50,d:"+Z",ba:90,b:300,bv:0,bs:""}};
+const PRE={fcu:{nps:"1",items:[{t:"pipe",len:300},{t:"valve",v:"Ball",len:90},{t:"pipe",len:150},{t:"valve",v:"Strainer",len:140},{t:"pipe",len:150},{t:"valve",v:"Balancing",len:120},{t:"pipe",len:250},{t:"elbow",d:"+Z"},{t:"pipe",len:400},{t:"elbow",d:"+Y"},{t:"pipe",len:300}]},
+chl:{nps:"4",items:[{t:"flange",len:25},{t:"valve",v:"Butterfly",len:60},{t:"flange",len:25},{t:"pipe",len:400},{t:"tee",len:250,d:"+Z",b:600,bv:80},{t:"pipe",len:800},{t:"tee",len:250,d:"+Z",b:600,bv:80},{t:"pipe",len:400}]}};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>"&#"+c.charCodeAt(0)+";"),LC=["#4aa3c4","#30a46c","#a371f7","#e5589f","#d4a017","#e5484d"],GEN={union:{n:"Union",l:"U"},hammer:{n:"Hammer union",l:"H"},coupling:{n:"Coupling",l:"C"},cap:{n:"End cap",l:"X"},expjoint:{n:"Expansion joint",l:"E"}},
+FL=[["P","Pressure"],["T","Temperature"],["F","Flow"],["L","Level"],["A","Analysis"],["D","Density"],["W","Weight / force"],["S","Speed / frequency"],["Z","Position"],["H","Hand (manual)"],["E","Voltage"],["I","Current"],["J","Power"],["K","Time"],["M","Moisture"],["Q","Quantity"],["R","Radiation"],["V","Vibration"],["Y","Event / state"]],
+BAL=["Field","Control room","Local panel","Behind panel","DCS display","Computer","PLC"],
+FC={steel:"#7c8794",union:"#8b95a1",hammer:"#c9a227",coupling:"#8b95a1",cap:"#5d6b78",expjoint:"#9b6b3f",plate:"#1f2933",inst:"#e5484d",orifice:"#14485e"},WK={union:1.5,hammer:1.9,coupling:1.25,cap:1.25,expjoint:1.5,plate:1,inst:1.4},
+cc=(s,C0)=>s.c||((s.k==="pipe"||s.k==="tee"||s.k==="red")?(S.lines[s.l].c||LC[s.l%LC.length]):(C0[s.k]||FC[s.k]||"#888"));
+const mkL=(n,p,items)=>({name:n,nps:p.nps||"1",start:"+X",att:"",ox:0,oy:0,oz:0,ex:[],items:JSON.parse(JSON.stringify(items))});
+let S={lines:[mkL("Line 1",PRE.fcu,PRE.fcu.items)],rf:"1.5",wall:"3.4",job:""},yaw=-.7,pit=.5,zm=1,dimOn=true,B=null,pan=[0,0],selI=-1,selL=0;
+const cur=()=>S.lines[selL],nm=v=>v>=1000?"support "+(v-999):"item "+(v+1);
+try{const s2=JSON.parse(localStorage.getItem("esps2")||"null"),o=JSON.parse(localStorage.getItem("esps")||"null");
+ if(s2&&s2.lines&&s2.lines.length)S=Object.assign(S,s2);else if(o&&o.items){S.lines=[Object.assign(mkL("Line 1",o,o.items),{start:o.start||"+X"})];S.rf=o.rf||S.rf;S.wall=o.wall||S.wall;S.job=o.job||""}}catch(e){}
+function bln(x,cx,cy,r,ty,t1,t2,col,bg){x.save();x.lineWidth=1.8;x.strokeStyle=col;x.fillStyle=bg;x.setLineDash([]);const sq=ty==="DCS display"||ty==="PLC";
+ if(sq){x.beginPath();x.rect(cx-r-4,cy-r-4,2*r+8,2*r+8);x.fill();x.stroke()}
+ x.beginPath();if(ty==="Computer"){for(let k=0;k<6;k++){const a=k*Math.PI/3;x.lineTo(cx+r*1.12*Math.cos(a),cy+r*1.12*Math.sin(a))}x.closePath()}
+ else if(ty==="PLC"){x.moveTo(cx,cy-r*1.1);x.lineTo(cx+r*1.1,cy);x.lineTo(cx,cy+r*1.1);x.lineTo(cx-r*1.1,cy);x.closePath()}else x.arc(cx,cy,r,0,7);
+ x.fill();x.stroke();
+ if(ty==="Control room"||ty==="Local panel"||ty==="Behind panel"){x.setLineDash(ty==="Behind panel"?[4,3]:[]);(ty==="Local panel"?[-2.5,2.5]:[0]).forEach(d=>{x.beginPath();x.moveTo(cx-r,cy+d);x.lineTo(cx+r,cy+d);x.stroke()})}
+ x.setLineDash([]);x.fillStyle=col;x.textAlign="center";x.font="bold 10px system-ui";x.fillText(t1||"",cx,cy-4);x.fillText(t2||"",cx,cy+9);x.restore()}
+function sync(){["job","wall","rf"].forEach(k=>$(k).value=S[k])}
+function proj(p,y,t){const cy=Math.cos(y),sy=Math.sin(y),cp=Math.cos(t),sp=Math.sin(t),wx=p[0]*cy-p[1]*sy,wy=p[0]*sy+p[1]*cy;return[wx,-(p[2]*cp+wy*sp),wy*cp-p[2]*sp]}
+function axes(x,y,t,H){const o=[38,H-38],L=26;[["X","#e5484d",[1,0,0]],["Y","#30a46c",[0,1,0]],["Z","#3e8bff",[0,0,1]]].forEach(([n,c,v])=>{const q=proj(v,y,t),e=[o[0]+q[0]*L,o[1]+q[1]*L];x.strokeStyle=x.fillStyle=c;x.lineWidth=2.5;x.beginPath();x.moveTo(o[0],o[1]);x.lineTo(e[0],e[1]);x.stroke();x.font="bold 12px system-ui";x.textAlign="center";x.fillText(n,o[0]+q[0]*(L+10),o[1]+q[1]*(L+10)+4)})}
+function draw(cv,y,t,W,H,dpr,g,z){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);const x=cv.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.fillStyle=g.cv;x.fillRect(0,0,W,H);
+ const wp=B.P.flatMap(s=>[s.a,s.b]),lo=[0,1,2].map(k=>Math.min(...wp.map(p=>p[k]))),hi=[0,1,2].map(k=>Math.max(...wp.map(p=>p[k]))),c3=lo.map((v,k)=>(v+hi[k])/2),rad=Math.max(1,...wp.map(p=>Math.hypot(p[0]-c3[0],p[1]-c3[1],p[2]-c3[2]))),q0=proj(c3,y,t),cx=q0[0],cy=q0[1],sc=Math.min(W,H)*.34/rad*z,P=p=>{const q=proj(p,y,t);return[(q[0]-cx)*sc+W/2+(g.pan?pan[0]:0),(q[1]-cy)*sc+H/2+(g.pan?pan[1]:0),q[2]]};
+ x.lineCap="round";const W0={pipe:1,tee:1.15,valve:1.7,flange:1.6,red:1.25},C0={pipe:g.p1,tee:g.p1,valve:g.v,flange:g.p2,red:g.p1};
+ B.P.map(s=>{const A=P(s.a),Z=P(s.b);return{A,Z,s,d:(A[2]+Z[2])/2}}).sort((m,n)=>n.d-m.d).forEach(({A,Z,s})=>{const w=s.w?Math.max(4,s.w*sc):Math.max(4,s.od*sc)*(W0[s.k]||WK[s.k]||1.3);x.lineCap=["pipe","tee","red"].includes(s.k)?"round":"butt";
+  if(s.l===selL&&s.i===selI&&g.pan){x.beginPath();x.moveTo(A[0],A[1]);x.lineTo(Z[0],Z[1]);x.strokeStyle="#d9541e";x.lineWidth=w+8;x.stroke()}x.beginPath();x.moveTo(A[0],A[1]);x.lineTo(Z[0],Z[1]);x.strokeStyle=g.p2;x.lineWidth=w+2;x.stroke();x.strokeStyle=cc(s,C0);x.lineWidth=w;x.stroke();
+  if(s.lab&&Math.hypot(Z[0]-A[0],Z[1]-A[1])>8){x.fillStyle="#fff";x.font="bold 11px system-ui";x.textAlign="center";x.fillText(s.lab,(A[0]+Z[0])/2,(A[1]+Z[1])/2+4)}});
+ axes(x,y,t,H);
+ x.font="bold 12px system-ui";x.textAlign="left";B.S0.forEach((s0,k)=>{const q=P(s0);x.fillStyle=S.lines[k].c||LC[k%LC.length];x.fillText("L"+(k+1)+" "+S.lines[k].name,q[0]+6,q[1]-8)});
+ B.CLR.forEach(c=>{const q=P(c.m);if(c.g<0){x.strokeStyle="#e5484d";x.lineWidth=3;x.beginPath();x.arc(q[0],q[1],16,0,7);x.stroke()}if(dimOn){x.fillStyle=c.g<0?"#e5484d":g.dim;x.font="12px system-ui";x.textAlign="center";x.fillText((c.g<0?"CLASH ":"gap ")+Math.round(c.g),q[0],q[1]-20)}});
+ B.P.forEach(s=>{if(s.k!=="inst"||!s.tl)return;const e=P(s.b),cx=e[0],cy=e[1]-42;x.strokeStyle=g.fg;x.lineWidth=1;x.beginPath();x.moveTo(e[0],e[1]);x.lineTo(cx,cy+16);x.stroke();bln(x,cx,cy,16,s.bal,s.tl,s.tn,g.fg,g.cv)});
+ x.textAlign="center";
+ if(dimOn){const off=+$("off").value,fs=+$("ts").value;x.font=fs+"px system-ui,sans-serif";x.textAlign="center";x.strokeStyle=g.dim;x.lineWidth=1;
+  B.D.forEach(d=>{const A=P(d.a),Z=P(d.b),dx=Z[0]-A[0],dy=Z[1]-A[1],n=Math.hypot(dx,dy);if(n<22)return;const ox=-dy/n*off,oy=dx/n*off,a1=[A[0]+ox,A[1]+oy],b1=[Z[0]+ox,Z[1]+oy];
+   x.beginPath();x.moveTo(A[0]+ox*.25,A[1]+oy*.25);x.lineTo(a1[0]+ox*.08,a1[1]+oy*.08);x.moveTo(Z[0]+ox*.25,Z[1]+oy*.25);x.lineTo(b1[0]+ox*.08,b1[1]+oy*.08);x.moveTo(a1[0],a1[1]);x.lineTo(b1[0],b1[1]);x.stroke();
+   x.fillStyle=g.dim;[[a1,1],[b1,-1]].forEach(([p,s])=>{x.beginPath();x.moveTo(p[0],p[1]);x.lineTo(p[0]+s*dx/n*8-dy/n*3,p[1]+s*dy/n*8+dx/n*3);x.lineTo(p[0]+s*dx/n*8+dy/n*3,p[1]+s*dy/n*8-dx/n*3);x.fill()});
+   x.save();x.translate((a1[0]+b1[0])/2,(a1[1]+b1[1])/2);let r=Math.atan2(dy,dx);if(r>Math.PI/2||r<-Math.PI/2)r+=Math.PI;x.rotate(r);const T=String(Math.round(d.x*10)/10),tw=x.measureText(T).width+8;
+   x.fillStyle=g.cv;x.fillRect(-tw/2,-fs/2-2,tw,fs+4);x.fillStyle=g.dim;x.fillText(T,0,fs/3);x.restore()})}}
+const css=()=>{const s=getComputedStyle(document.documentElement),v=n=>s.getPropertyValue(n).trim();return{pan:1,cv:v("--cv"),p1:v("--p1"),p2:v("--p2"),v:v("--v"),dim:v("--dim"),fg:v("--fg")}};
+const LIGHT={cv:"#ffffff",p1:"#4aa3c4",p2:"#14485e",v:"#e0892b",dim:"#c4400f",fg:"#17212b"};
+const paint=()=>{const c=$("cv"),W=c.clientWidth,H=c.clientHeight,d=Math.min(2,devicePixelRatio||1);if(walk)drawWalk(c,W,H,d,css());else draw(c,yaw,pit,W,H,d,css(),zm)};
+function upd(){B=build(S.lines,+S.rf,OD);
+ const tb=r=>"<tr>"+r.map(c=>"<td>"+esc(c)+"</td>").join("")+"</tr>";$("rows").innerHTML=B.rows.map(tb).join("");$("pr").innerHTML=B.rows.map(tb).join("");
+ const all=B.P.flatMap(s=>[s.a,s.b]),e=[0,1,2].map(k=>Math.round(Math.max(...all.map(p=>p[k]))-Math.min(...all.map(p=>p[k]))));
+ let kg=0,tl=0;for(const z in B.len){kg+=B.len[z]/1000*kgm(OD[z],+S.wall||1);tl+=B.len[z]}
+ $("sum").textContent="Overall X "+e[0]+" × Y "+e[1]+" × Z "+e[2]+" mm · pipe to cut "+Math.round(tl)+" mm · about "+kg.toFixed(1)+" kg (single wall value)";
+ $("warn").textContent=B.warn.join(" ");$("exn").textContent="Line length "+Math.round(B.LL[selL]||0)+" mm. Place each item by its distance from the start of this line (it follows the elbows).";$("clr").innerHTML=B.CLR.map(c=>'<div'+(c.g<0?' style="color:var(--dim);font-weight:600"':'')+'>Line '+(c.a+1)+' ↔ Line '+(c.b+1)+': '+(c.g<0?'CLASH, overlap ':'clear gap ')+Math.abs(Math.round(c.g))+' mm ('+nm(c.si)+' / '+nm(c.ti)+')</div>').join("")||"Add a second line to check clearances.";try{localStorage.setItem("esps2",JSON.stringify(S))}catch(e){}paint()}
+const dirs=k=>Object.keys(DIR).map(d=>"<option"+(d===k?" selected":"")+">"+d+"</option>").join("");
+const fld=(i,k,l,v,ty)=>'<label>'+l+'<input type="'+(ty||"number")+'" placeholder="auto" data-i="'+i+'" data-k="'+k+'" value="'+(v==null?"":esc(v))+'"></label>';
+const sel=(i,k,l,o)=>'<label>'+l+'<select data-i="'+i+'" data-k="'+k+'">'+o+'</select></label>';
+const opts=(a,v)=>a.map(x=>"<option"+(x===v?" selected":"")+">"+x+"</option>").join("");
+const dcol=T=>T==="valve"?"#e0892b":T==="flange"?"#14485e":FC[T]||(cur().c||LC[selL%LC.length]);
+function lineUI(){const l=cur();$("ih").textContent="Items on "+l.name;
+ $("tabs").innerHTML=S.lines.map((x,k)=>'<button data-t="'+k+'"'+(k===selL?' class="on"':'')+'>'+(k+1)+'. '+esc(x.name)+'</button>').join("")+'<button data-addl="1">+ Line</button><button data-lrc="1">Reset line colour</button>'+(S.lines.length>1?'<button data-dell="1">Delete</button>':'');
+ let ao='<option value="">Free (own X Y Z)</option>';S.lines.forEach((m,k)=>{if(k<selL){ao+='<option value="'+k+':0">Line '+(k+1)+' start</option>';m.items.forEach((it,i)=>{ao+='<option value="'+k+':'+(i+1)+'">Line '+(k+1)+' end of item '+(i+1)+' ('+it.t+')</option>';if(it.t==="tee")ao+='<option value="'+k+':'+(i+1)+'b">Line '+(k+1)+' tee '+(i+1)+' branch end</option>'})}});
+ ao=ao.replace('value="'+l.att+'"','value="'+l.att+'" selected');
+ const n=(k,t)=>'<label>'+t+'<input data-lk="'+k+'" type="number" value="'+(+l[k]||0)+'"></label>',o=l.att?" offset":"";
+ $("lf").innerHTML='<label>Line name<input data-lk="name" value="'+esc(l.name)+'"></label><label>Pipe size (NPS)<select data-lk="nps">'+opts(Object.keys(OD),l.nps)+'</select></label><label>Start direction<select data-lk="start">'+opts(Object.keys(DIR),l.start)+'</select></label><label>Start from<select data-lk="att">'+ao+'</select></label>'+n("ox","X"+o+" (mm)")+n("oy","Y"+o+" (mm)")+n("oz","Height Z"+o+" (mm)")+'<label>Line colour<input data-lk="c" type="color" style="padding:2px" value="'+(l.c||LC[selL%LC.length])+'"></label>'}
+const EXN={support:"Support (below pipe)",hanger:"Hanger (above pipe)",beam:"Cross beam",block:"Attached item"},
+EXNEW={support:{t:"support",at:500,h:0,pw:100,sl:200},hanger:{t:"hanger",at:500,h:500,pw:16},beam:{t:"beam",at:500,bl:1000,pw:100,vo:0},block:{t:"block",at:500,so:300,vo:0,pw:200,h:300,lb:"BOX"}};
+function exUI(){const a=cur().ex||(cur().ex=[]);$("exs").innerHTML=a.map((x,i)=>{let f=fld(i,"at","At distance from line start (mm)",x.at);
+ if(x.t==="support")f+=fld(i,"h","Post height (0 = down to floor Z=0)",x.h)+fld(i,"pw","Member size (mm)",x.pw)+fld(i,"sl","Shoe length (mm)",x.sl);
+ if(x.t==="hanger")f+=fld(i,"h","Rod length (mm)",x.h)+fld(i,"pw","Rod dia (mm)",x.pw);
+ if(x.t==="beam")f+=fld(i,"bl","Beam length (mm)",x.bl)+fld(i,"pw","Beam size (mm)",x.pw)+fld(i,"vo","Height vs pipe centre (0 = just under)",x.vo);
+ if(x.t==="block")f+=fld(i,"so","Sideways offset (mm, + or −)",x.so)+fld(i,"vo","Height vs pipe centre (mm)",x.vo)+fld(i,"pw","Width (mm)",x.pw)+fld(i,"h","Height (mm)",x.h)+fld(i,"lb","Label",x.lb,"text");
+ return'<div class="it"><div class="row" style="margin:0"><b style="flex:1">S'+(i+1)+". "+EXN[x.t]+'</b><input type="color" style="width:44px;min-height:36px;padding:2px" aria-label="Colour" data-i="'+i+'" data-k="c" value="'+(x.c||FC.steel)+'"><button data-xrc="'+i+'" aria-label="Reset colour">↺</button><button data-xdup="'+i+'" aria-label="Duplicate">⧉</button><button data-xdel="'+i+'" aria-label="Delete">✕</button></div><div class="f">'+f+'</div></div>'}).join("")||'<p class="note">No supports or attachments on this line yet.</p>'}
+$("exs").addEventListener("input",e=>{const t=e.target,i=t.dataset.i;if(i==null)return;cur().ex[i][t.dataset.k]=t.type==="number"?+t.value:t.value;upd()});
+$("exs").addEventListener("click",e=>{const d=e.target.dataset,a=cur().ex;if(d.xdel!=null)a.splice(+d.xdel,1);else if(d.xdup!=null)a.splice(+d.xdup+1,0,JSON.parse(JSON.stringify(a[+d.xdup])));else if(d.xrc!=null)delete a[+d.xrc].c;else return;exUI();upd()});
+$("exadds").addEventListener("click",e=>{const k=e.target.dataset.x;if(!k)return;const a=cur().ex||(cur().ex=[]),o=JSON.parse(JSON.stringify(EXNEW[k]));o.at=a.length?(+a[a.length-1].at||0)+1000:500;a.push(o);exUI();upd()});
+function list(){lineUI();exUI();$("items").innerHTML=cur().items.map((it,i)=>{let f="",T=it.t;
+ if(T==="pipe")f=fld(i,"len","Length (mm)",it.len);
+ if(T==="flange")f=sel(i,"ft","Type",opts(["WN","SO","Blind","Threaded","Lap joint"],it.ft))+fld(i,"len","Thickness (mm)",it.len)+fld(i,"fd","Flange OD (mm)",it.fd)+fld(i,"r","Rating",it.r,"text");
+ if(T==="elbow")f=sel(i,"d","Turn to",dirs(it.d))+fld(i,"a","Angle (°)",it.a)+fld(i,"rf","Radius × OD",it.rf);
+ if(T==="valve")f=sel(i,"v","Type",opts(["Ball","Gate","Globe","Check","Butterfly","Strainer","Balancing","Control","Needle","Plug","Diaphragm","Knife gate","Relief","Solenoid"],it.v))+fld(i,"len","Face to face (mm)",it.len)+fld(i,"vd","Body dia (mm)",it.vd)+fld(i,"tag","Tag",it.tag,"text");
+ if(T==="reducer")f=fld(i,"len","Length (mm)",it.len)+sel(i,"to","To size",opts(Object.keys(OD),it.to));
+ if(GEN[T])f=fld(i,"len","Length (mm)",it.len)+fld(i,"vd","Body dia (mm)",it.vd)+fld(i,"r","Rating / class",it.r,"text")+fld(i,"tag","Tag",it.tag,"text");
+ if(T==="nipple")f=fld(i,"len","Length (mm)",it.len)+sel(i,"nt","Type",opts(["Close","Short","Long","TBE","TOE"],it.nt))+fld(i,"tag","Tag",it.tag,"text");
+ if(T==="orifice")f=fld(i,"len","Flange thickness (mm)",it.len)+fld(i,"pt","Plate + gaskets (mm)",it.pt)+fld(i,"fd","Flange OD (mm)",it.fd)+fld(i,"r","Rating",it.r,"text")+fld(i,"tag","Tag",it.tag,"text")+'<label>Plate colour<input type="color" style="padding:2px" data-i="'+i+'" data-k="pc" value="'+(it.pc||FC.plate)+'"></label>';
+ if(T==="inst")f=fld(i,"len","Tap body (mm)",it.len)+fld(i,"pos","Tap at (% of body)",it.pos)+sel(i,"d","Branch toward",dirs(it.d))+fld(i,"ba","Branch angle (°)",it.ba)+fld(i,"b","Branch length (mm)",it.b)+fld(i,"il","Instrument length (mm)",it.il)+fld(i,"idia","Instrument dia (mm)",it.idia)+sel(i,"ia","Measured variable (1st letter)",FL.map(([l,n])=>'<option value="'+l+'"'+(l===it.ia?" selected":"")+'>'+l+' – '+n+'</option>').join(""))+fld(i,"ifn","Function letters (I, T, C, V, S, A, E, G, Y…)",it.ifn,"text")+fld(i,"loop","Loop number",it.loop,"text")+sel(i,"bal","Balloon (mounting / system)",opts(BAL,it.bal))+sel(i,"bs","Tap size",opts(Object.keys(OD),it.bs));
+ if(T==="tee")f=fld(i,"len","Body length (mm)",it.len)+fld(i,"pos","Branch at (% of body)",it.pos)+sel(i,"d","Branch toward",dirs(it.d))+fld(i,"ba","Branch angle (°)",it.ba)+fld(i,"b","Branch length (mm)",it.b)+fld(i,"bv","Branch valve (mm)",it.bv)+sel(i,"bs","Branch size",'<option value="">Same as run</option>'+opts(Object.keys(OD),it.bs))+'<label>Branch colour<input type="color" style="padding:2px" data-i="'+i+'" data-k="bc" value="'+(it.bc||it.c||dcol("tee"))+'"></label>';
+ return'<div class="it" data-n="'+i+'"'+(i===selI?' style="border-color:var(--ac)"':"")+'><div class="row" style="margin:0"><b style="flex:1">'+(i+1)+". "+T+'</b><input type="color" style="width:44px;min-height:36px;padding:2px" aria-label="Colour" data-i="'+i+'" data-k="c" value="'+(it.c||dcol(T))+'"><button data-rc="'+i+'" aria-label="Reset colour">↺</button><button data-dup="'+i+'" aria-label="Duplicate">⧉</button><button data-up="'+i+'">↑</button><button data-dn="'+i+'">↓</button><button data-del="'+i+'" aria-label="Delete">✕</button></div><div class="f">'+f+'</div></div>'}).join("")}
+$("lf").addEventListener("input",e=>{const t=e.target,k=t.dataset.lk;if(!k)return;cur()[k]=t.type==="number"?+t.value:t.value;if(k==="name"){const b=document.querySelector('[data-t="'+selL+'"]');if(b)b.textContent=(selL+1)+". "+t.value;$("ih").textContent="Items on "+t.value}upd()});
+$("tabs").onclick=e=>{const d=e.target.dataset;if(d.t!=null)selL=+d.t;else if(d.addl){const n=S.lines.length;S.lines.push(Object.assign(mkL("Line "+(n+1),cur(),[{t:"pipe",len:1000}]),{oy:300*n}));selL=n}
+ else if(d.lrc){delete cur().c}else if(d.dell){const x=selL;S.lines.splice(x,1);S.lines.forEach(m=>{if(m.att){const a=m.att.split(":");m.att=+a[0]===x?"":(+a[0]>x?(a[0]-1)+":"+a[1]:m.att)}});selL=Math.max(0,x-1)}else return;selI=-1;list();upd()};
+$("items").addEventListener("input",e=>{const t=e.target,i=t.dataset.i;if(i==null)return;cur().items[i][t.dataset.k]=t.type==="number"?+t.value:t.value;upd()});
+$("items").addEventListener("click",e=>{const d=e.target.dataset,a=cur().items;if(d.rc!=null){delete a[+d.rc].c;delete a[+d.rc].bc;delete a[+d.rc].pc}else if(d.del!=null){a.splice(+d.del,1);selI=-1}else if(d.dup!=null){a.splice(+d.dup+1,0,JSON.parse(JSON.stringify(a[+d.dup])));selI=+d.dup+1}else if(d.up!=null&&+d.up>0){[a[+d.up-1],a[+d.up]]=[a[+d.up],a[+d.up-1]];selI=+d.up-1}else if(d.dn!=null&&+d.dn<a.length-1){[a[+d.dn+1],a[+d.dn]]=[a[+d.dn],a[+d.dn+1]];selI=+d.dn+1}else return;list();upd()});
+const selc=e=>{const c=e.target.closest&&e.target.closest(".it");if(!c)return;selI=+c.dataset.n;document.querySelectorAll(".it").forEach((el,k)=>el.style.borderColor=k===selI?"var(--ac)":"");paint()};
+$("items").addEventListener("focusin",selc);$("items").addEventListener("click",selc);
+$("adds").addEventListener("click",e=>{const k=e.target.dataset.a;if(!k)return;cur().items.splice(selI>=0?selI+1:cur().items.length,0,JSON.parse(JSON.stringify(NEW[k])));if(selI>=0)selI++;list();upd()});
+["job","wall","rf"].forEach(k=>$(k).addEventListener("input",()=>{S[k]=$(k).value;upd()}));
+$("pre").onchange=()=>{const p=PRE[$("pre").value];if(!p)return;S.lines=[mkL("Line 1",p,p.items)];S.wall=p.nps==="1"?"3.4":"6";selL=0;selI=-1;sync();list();upd();$("pre").value=""};
+$("dm").onclick=()=>{dimOn=!dimOn;$("dm").classList.toggle("on",dimOn);paint()};["off","ts"].forEach(i=>$(i).addEventListener("input",paint));
+$("zi").onclick=()=>{zm=Math.min(5,zm*1.25);paint()};$("zo").onclick=()=>{zm=Math.max(.3,zm/1.25);paint()};
+$("views").addEventListener("click",e=>{const v=e.target.dataset.v;if(!v)return;if(walk)setWalk(false);pan=[0,0];[yaw,pit]=VW[v]||VW.iso;document.querySelectorAll("[data-v]").forEach(b=>b.classList.toggle("on",b.dataset.v===v));paint()});
+const VW={iso:[-.7,.5],front:[0,0],back:[Math.PI,0],top:[0,Math.PI/2-.001],bottom:[0,-Math.PI/2+.001],side:[Math.PI/2,0],left:[-Math.PI/2,0]};
+let walk=false,cam={p:[0,0,0],yaw:0,pit:0},joy=[0,0],lastT=0;
+function info(){const wp=B.P.flatMap(s=>[s.a,s.b]),lo=[0,1,2].map(k=>Math.min(...wp.map(p=>p[k]))),hi=[0,1,2].map(k=>Math.max(...wp.map(p=>p[k]))),c3=lo.map((v,k)=>(v+hi[k])/2);return{c3,zmin:lo[2],rad:Math.max(100,...wp.map(p=>Math.hypot(p[0]-c3[0],p[1]-c3[1],p[2]-c3[2])))}}
+function initCam(){const i=info(),p=[i.c3[0]-i.rad*1.6,i.c3[1]-i.rad*2.2,i.c3[2]+i.rad*.9],v=[i.c3[0]-p[0],i.c3[1]-p[1],i.c3[2]-p[2]];cam={p,yaw:Math.atan2(v[0],v[1]),pit:Math.atan2(v[2],Math.hypot(v[0],v[1]))}}
+function drawWalk(c,W,H,dpr,g){c.width=Math.round(W*dpr);c.height=Math.round(H*dpr);const x=c.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.fillStyle=g.cv;x.fillRect(0,0,W,H);
+ const I=info(),sp=Math.sin(cam.pit),cp=Math.cos(cam.pit),sy=Math.sin(cam.yaw),cy=Math.cos(cam.yaw),d=[cp*sy,cp*cy,sp],r=[cy,-sy,0],u=[-sp*sy,-sp*cy,cp],F=W*.9,N=10,gz=I.zmin;
+ const cm=p=>{const v=[p[0]-cam.p[0],p[1]-cam.p[1],p[2]-cam.p[2]];return[v[0]*r[0]+v[1]*r[1],v[0]*u[0]+v[1]*u[1]+v[2]*u[2],v[0]*d[0]+v[1]*d[1]+v[2]*d[2]]};
+ const seg=(a,b)=>{a=cm(a);b=cm(b);if(a[2]<N&&b[2]<N)return null;if(a[2]<N){const t=(N-a[2])/(b[2]-a[2]);a=a.map((v,k)=>v+t*(b[k]-v))}else if(b[2]<N){const t=(N-b[2])/(a[2]-b[2]);b=b.map((v,k)=>v+t*(a[k]-v))}return{A:[W/2+F*a[0]/a[2],H/2-F*a[1]/a[2]],Z:[W/2+F*b[0]/b[2],H/2-F*b[1]/b[2]],z:(a[2]+b[2])/2}};
+ const st=Math.pow(10,Math.floor(Math.log10(I.rad/3))),M=Math.min(40,Math.ceil(3*I.rad/st)),gx=Math.round(I.c3[0]/st)*st,gy=Math.round(I.c3[1]/st)*st;
+ x.globalAlpha=.3;x.strokeStyle=g.p2;x.lineWidth=1;x.beginPath();
+ for(let i=-M;i<=M;i++)[[[gx+i*st,gy-M*st,gz],[gx+i*st,gy+M*st,gz]],[[gx-M*st,gy+i*st,gz],[gx+M*st,gy+i*st,gz]]].forEach(([a,b])=>{const q=seg(a,b);if(q){x.moveTo(q.A[0],q.A[1]);x.lineTo(q.Z[0],q.Z[1])}});x.stroke();x.globalAlpha=1;
+ const W0={pipe:1,tee:1.15,valve:1.7,flange:1.6,red:1.25},C0={pipe:g.p1,tee:g.p1,valve:g.v,flange:g.p2,red:g.p1};
+ const L=B.P.map(s=>({s,q:seg(s.a,s.b),h:seg([s.a[0],s.a[1],gz],[s.b[0],s.b[1],gz])})).filter(o=>o.q);
+ x.lineCap="round";x.globalAlpha=.25;x.strokeStyle="#000";L.forEach(o=>{if(!o.h)return;x.lineWidth=Math.max(2,o.s.od*F/o.h.z);x.beginPath();x.moveTo(o.h.A[0],o.h.A[1]);x.lineTo(o.h.Z[0],o.h.Z[1]);x.stroke()});x.globalAlpha=1;
+ L.sort((m,n)=>n.q.z-m.q.z).forEach(({s,q})=>{const w=s.w?Math.max(3,s.w*F/q.z):Math.max(3,s.od*F/q.z)*(W0[s.k]||WK[s.k]||1.3);x.lineCap=["pipe","tee","red"].includes(s.k)?"round":"butt";
+  if(s.l===selL&&s.i===selI){x.beginPath();x.moveTo(q.A[0],q.A[1]);x.lineTo(q.Z[0],q.Z[1]);x.strokeStyle="#d9541e";x.lineWidth=w+8;x.stroke()}
+  x.beginPath();x.moveTo(q.A[0],q.A[1]);x.lineTo(q.Z[0],q.Z[1]);x.strokeStyle=g.p2;x.lineWidth=w+2;x.stroke();x.strokeStyle=cc(s,C0);x.lineWidth=w;x.stroke()})}
+function walkLook(e,o,n,dx,dy){if(pt.size===1){cam.yaw+=dx*.006;cam.pit=Math.max(-1.5,Math.min(1.5,cam.pit-dy*.006))}else{const ot=pt.get([...pt.keys()].find(i=>i!==e.pointerId)),d0=Math.hypot(o[0]-ot[0],o[1]-ot[1]),d1=Math.hypot(n[0]-ot[0],n[1]-ot[1]),k=info().rad*(d1-d0)/150;cam.p[0]+=Math.cos(cam.pit)*Math.sin(cam.yaw)*k;cam.p[1]+=Math.cos(cam.pit)*Math.cos(cam.yaw)*k;cam.p[2]+=Math.sin(cam.pit)*k}}
+function tick(t){if(!walk)return;const dt=Math.min(.05,(t-lastT)/1000);lastT=t;if(joy[0]||joy[1]){const sp=info().rad*.9*dt,cp=Math.cos(cam.pit),f=-joy[1];cam.p[0]+=(f*cp*Math.sin(cam.yaw)+joy[0]*Math.cos(cam.yaw))*sp;cam.p[1]+=(f*cp*Math.cos(cam.yaw)-joy[0]*Math.sin(cam.yaw))*sp;cam.p[2]+=f*Math.sin(cam.pit)*sp;paint()}requestAnimationFrame(tick)}
+function setWalk(on){walk=on;$("joy").style.display=on?"block":"none";$("hb").style.display=on?"flex":"none";$("walk").classList.toggle("on",on);
+ if(on){initCam();cv.style.touchAction="none";document.querySelectorAll("[data-m]").forEach(b=>b.classList.remove("on"));lastT=performance.now();requestAnimationFrame(tick)}else setM(mode);paint()}
+const cv=$("cv"),pt=new Map();let mode="orbit";
+function setM(m){mode=m;if(walk)setWalk(false);cv.style.touchAction=m==="hold"?"pan-y":"none";document.querySelectorAll("[data-m]").forEach(b=>b.classList.toggle("on",b.dataset.m===m))}setM("orbit");
+document.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>setM(b.dataset.m));
+$("walk").onclick=()=>setWalk(!walk);
+$("hu").onclick=()=>{cam.p[2]+=info().rad*.12;paint()};$("hd").onclick=()=>{cam.p[2]-=info().rad*.12;paint()};
+const joyEl=$("joy"),ball=$("ball");let jp=null;
+const jm=e=>{const r=joyEl.getBoundingClientRect();let dx=e.clientX-(r.left+55),dy=e.clientY-(r.top+55);const L=Math.hypot(dx,dy),M=41;if(L>M){dx*=M/L;dy*=M/L}ball.style.transform="translate("+dx+"px,"+dy+"px)";joy=[dx/M,dy/M]};
+joyEl.addEventListener("pointerdown",e=>{jp=e.pointerId;joyEl.setPointerCapture(e.pointerId);jm(e)});
+joyEl.addEventListener("pointermove",e=>{if(e.pointerId===jp)jm(e)});
+const jend=e=>{if(e.pointerId!==jp)return;jp=null;joy=[0,0];ball.style.transform=""};
+joyEl.addEventListener("pointerup",jend);joyEl.addEventListener("pointercancel",jend);
+$("home").onclick=()=>{if(walk){initCam();paint();return}[yaw,pit]=VW.iso;pan=[0,0];zm=1;document.querySelectorAll("[data-v]").forEach(b=>b.classList.toggle("on",b.dataset.v==="iso"));paint()};
+$("fitb").onclick=()=>{pan=[0,0];zm=1;paint()};
+cv.addEventListener("pointerdown",e=>{if(mode==="hold")return;pt.set(e.pointerId,[e.clientX,e.clientY]);cv.setPointerCapture(e.pointerId)});
+cv.addEventListener("pointermove",e=>{if(!pt.has(e.pointerId))return;const o=pt.get(e.pointerId),n=[e.clientX,e.clientY],dx=n[0]-o[0],dy=n[1]-o[1];
+ if(walk){walkLook(e,o,n,dx,dy);pt.set(e.pointerId,n);paint();return}
+ if(pt.size===1){if(mode==="orbit"){yaw+=dx*.008;pit=Math.max(-1.55,Math.min(1.55,pit+dy*.008))}else if(mode==="pan"){pan[0]+=dx;pan[1]+=dy}else zm=Math.max(.3,Math.min(6,zm*(1-dy*.006)))}
+ else{const other=pt.get([...pt.keys()].find(i=>i!==e.pointerId)),d0=Math.hypot(o[0]-other[0],o[1]-other[1]),d1=Math.hypot(n[0]-other[0],n[1]-other[1]);if(d0>0)zm=Math.max(.3,Math.min(6,zm*d1/d0));pan[0]+=dx/2;pan[1]+=dy/2}
+ pt.set(e.pointerId,n);paint()});
+const up=e=>pt.delete(e.pointerId);cv.addEventListener("pointerup",up);cv.addEventListener("pointercancel",up);
+cv.addEventListener("wheel",e=>{e.preventDefault();zm=Math.max(.3,Math.min(5,zm*(e.deltaY<0?1.1:.9)));paint()},{passive:false});
+$("print").onclick=()=>{const im=document.querySelectorAll("#ps img");[[-.7,.5],[0,0],[0,Math.PI/2-.001],[Math.PI/2,0]].forEach(([y,t],i)=>{const c=document.createElement("canvas");draw(c,y,t,900,560,1,LIGHT,1);im[i].src=c.toDataURL("image/png")});
+ $("pt").textContent=(S.job||"Pipe sketch")+" · NPS "+S.nps+" · "+new Date().toLocaleDateString();$("pn").textContent="All dimensions in mm, centre-line unless stated. Not approved for fabrication until checked by an engineer.";setTimeout(()=>window.print(),80)};
+$("copy").onclick=async()=>{const t=B.rows.map(r=>r.join("\t")).join("\n");try{await navigator.clipboard.writeText(t);$("copy").textContent="Copied"}catch(e){$("copy").textContent="Copy blocked"}setTimeout(()=>$("copy").textContent="Copy cut list",1500)};
+const pj=()=>new Blob([JSON.stringify({app:"engstudio-pipe",v:2,job:S.job,rf:S.rf,wall:S.wall,lines:S.lines})],{type:"application/json"}),fn=()=>((S.job||"pipe-project").replace(/[^\w\- ]+/g,"").trim()||"pipe-project")+".json",col=c=>/^#[0-9a-f]{6}$/i.test(c)?c:undefined;
+$("sv").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(pj());a.download=fn();document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)};
+$("sh").onclick=async()=>{const f=new File([pj()],fn(),{type:"application/json"});try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:S.job||"Pipe project"});return}}catch(e){if(e.name==="AbortError")return}$("sv").click()};
+$("op").onclick=()=>$("fi").click();
+$("fi").onchange=async()=>{const f=$("fi").files[0];$("fi").value="";if(!f)return;let L2;try{const o=JSON.parse(await f.text());if(!o||!Array.isArray(o.lines)||!o.lines.length||o.lines.length>40)throw 0;
+ L2=o.lines.map(l=>{const m=mkL(String(l.name||"Line").slice(0,40),{nps:OD[l.nps]?l.nps:"1"},[]);Object.assign(m,{start:DIR[l.start]?l.start:"+X",att:/^\d+:\d+b?$/.test(l.att||"")?l.att:"",ox:+l.ox||0,oy:+l.oy||0,oz:+l.oz||0,c:col(l.c)});
+  m.items=(Array.isArray(l.items)?l.items:[]).filter(it=>it&&NEW.hasOwnProperty(it.t)).map(it=>Object.assign({},NEW[it.t],it,{c:col(it.c),bc:col(it.bc),pc:col(it.pc),d:DIR[it.d]?it.d:"+Z"}));m.ex=(Array.isArray(l.ex)?l.ex:[]).filter(x=>x&&EXNEW.hasOwnProperty(x.t)).map(x=>Object.assign({},EXNEW[x.t],x,{c:col(x.c),lb:String(x.lb||"").slice(0,8)}));return m});
+ if(!confirm("Open this project and replace the current drawing?"))return;S.lines=L2;S.job=String(o.job||"").slice(0,80);S.rf=["1","1.5","3"].includes(String(o.rf))?String(o.rf):"1.5";S.wall=String(+o.wall||3.4);selL=0;selI=-1;sync();list();upd()}catch(e){alert("This file is not a valid pipe project.")}};
+addEventListener("resize",()=>B&&paint());sync();list();upd();
+</script></body></html>
